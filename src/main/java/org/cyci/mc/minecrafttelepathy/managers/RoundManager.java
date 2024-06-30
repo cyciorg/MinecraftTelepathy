@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.cyci.mc.minecrafttelepathy.enums.GameMode;
+import org.cyci.mc.minecrafttelepathy.enums.TeamColor;
 import org.cyci.mc.minecrafttelepathy.lang.Lang;
 import org.cyci.mc.minecrafttelepathy.themes.ThemeManager;
 import org.cyci.mc.minecrafttelepathy.utils.C;
@@ -50,7 +51,7 @@ public class RoundManager {
         for (int i = 1; i <= maxTeams; i++) {
             String color = "Team Color " + i;
             String name = "Team Name " + i;
-            teams.add(new TeamManager(color, name));
+            teams.add(new TeamManager(TeamColor.random(), name));
         }
     }
 

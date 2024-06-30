@@ -1,5 +1,6 @@
 package org.cyci.mc.minecrafttelepathy.managers;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.cyci.mc.minecrafttelepathy.Registry;
 import org.cyci.mc.minecrafttelepathy.utils.Logger;
@@ -16,6 +17,12 @@ import java.util.*;
  * @email - phillip.kinney@cyci.org
  * @created - Sun - June/Sun/2024
  */
+
+/** BEGIN
+ * TODO: Implement String change's to player messages to reflect the message file
+ * @newPackage org.cyci.mc.minecraft.telepathy.utils.C;
+ * @oldPackage import org.bukkit.entity.Player.sendMessage(C.c(Lang.VALUE));
+ */
 public class LobbyManager {
     private final Map<UUID, Player> playerQueue;
     private final List<GameInstanceManager> activeGames;
@@ -24,6 +31,9 @@ public class LobbyManager {
     private final int maxPlayersPerTeam;
     private final int minTeams;
     private final int maxTeams;
+    private final int minGameStartDelay = 10; // Minimum delay in seconds
+    private final int maxGameStartDelay = 30; // Maximum delay in seconds
+    private final Random random = new Random();
     private final Logger logger;
 
     public LobbyManager(int maxPlayers, int minPlayersPerTeam, int maxPlayersPerTeam, int minTeams, int maxTeams) {
@@ -59,13 +69,23 @@ public class LobbyManager {
                     break;
                 }
             }
-            GameInstanceManager gameInstance = new GameInstanceManager(playersToStartGame, minPlayersPerTeam, maxPlayersPerTeam, minTeams, maxTeams);
-            activeGames.add(gameInstance);
-            gameInstance.startGame();
-            logger.info("New game instance started with " + playersToStartGame.size() + " players.");
+            /** BEGIN
+             * TODO: Implement
+             * @newPackage org.cyci.mc.minecraft.telepathy.utils.CountdownTimer
+             * @oldPackage org.bukkit.scheduler.BukkitScheduler().runTaskLater(Plugin plugin, lambda function() ->{})
+             */
+            int delay = random.nextInt(maxGameStartDelay - minGameStartDelay + 1) + minGameStartDelay;
+            Bukkit.getScheduler().runTaskLater(Registry.getInstance(), () -> {
+                GameInstanceManager gameInstance = new GameInstanceManager(playersToStartGame, minPlayersPerTeam, maxPlayersPerTeam, minTeams, maxTeams);
+                activeGames.add(gameInstance);
+                gameInstance.startGame();
+                logger.info("New game instance started with " + playersToStartGame.size() + " players after a " + delay + " second delay.");
+            }, delay * 20L);
+            /**
+             * END
+             */
         }
     }
-
     public void onGameEnd(GameInstanceManager gameInstance) {
         activeGames.remove(gameInstance);
         logger.info("Game instance ended.");
