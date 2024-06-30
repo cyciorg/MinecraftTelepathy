@@ -3,6 +3,7 @@ package org.cyci.mc.minecrafttelepathy.managers;
 import org.bukkit.entity.Player;
 import org.cyci.mc.minecrafttelepathy.Registry;
 import org.cyci.mc.minecrafttelepathy.enums.GameMode;
+import org.cyci.mc.minecrafttelepathy.enums.TeamColor;
 import org.cyci.mc.minecrafttelepathy.utils.Logger;
 
 import java.util.ArrayList;
@@ -44,7 +45,8 @@ public class GameInstanceManager {
         int teamCount = Math.min(maxTeams, players.size() / minPlayersPerTeam);
         for (int i = 1; i <= teamCount; i++) {
             // add colors soon
-            teams.add(new TeamManager("Team " + i, "Team " + i));
+
+            teams.add(new TeamManager(TeamColor.random(), "Team " + i));
         }
         assignPlayersToTeams();
     }

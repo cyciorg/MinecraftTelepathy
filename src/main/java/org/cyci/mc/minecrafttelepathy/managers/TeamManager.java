@@ -1,6 +1,7 @@
 package org.cyci.mc.minecrafttelepathy.managers;
 
 import org.bukkit.entity.Player;
+import org.cyci.mc.minecrafttelepathy.enums.TeamColor;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,19 +18,19 @@ import java.util.List;
  */
 public class TeamManager {
 
-    private final String color;
+    private final TeamColor color;
     private final String name;
     private final List<Player> players;
     private int points;
 
-    public TeamManager(String color, String name) {
+    public TeamManager(TeamColor color, String name) {
         this.color = color;
         this.name = name;
         this.players = new ArrayList<>();
         this.points = 0;
     }
 
-    public String getColor() {
+    public TeamColor getColor() {
         return color;
     }
 
