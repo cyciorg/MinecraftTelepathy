@@ -35,6 +35,7 @@ public class RoundManager {
     private CountdownTimer roundTimer;
     private final List<TeamManager> teams;
     private final int maxTeams;
+    private final Queue<List<TeamManager>> readyTeamSets;
 
     public RoundManager(JavaPlugin plugin, int totalRounds, int maxTeams) {
         this.plugin = plugin;
@@ -44,14 +45,17 @@ public class RoundManager {
         this.currentRound = 0;
         this.currentMode = GameMode.LOBBY;
         this.teams = new ArrayList<>();
+        this.readyTeamSets = new LinkedList<>();
         initializeTeams();
     }
 
     private void initializeTeams() {
-        TeamColor team = TeamColor.random();
-        String color = team.getColoredName();
-        String name = "Team: " + team.getId();
-        teams.add(new TeamManager(color, name));
+        for (int i = 0; i < maxTeams; i++) {
+            TeamColor team = TeamColor.random();
+            String color = team.getColoredName();
+            String name = "Team: " + team.getId();
+            teams.add(new TeamManager(color, name));
+        }
     }
 
     public void assignPlayerToTeam(Player player) {
@@ -61,21 +65,46 @@ public class RoundManager {
                 Map<String, String> replacements = new HashMap<>();
                 replacements.put("{team}", team.getName());
                 player.sendMessage(Lang.TEAM_ASSIGN.getConfigValue(player, replacements));
+
+                if (team.getPlayers().size() == 4) {
+                    checkTeamsReady();
+                }
                 return;
             }
         }
         player.sendMessage(ChatColor.RED + "All teams are full!");
     }
 
-    public void startGame() {
-        currentRound = 0;
-        currentMode = GameMode.IN_GAME;
-        startNextRound();
+    private void checkTeamsReady() {
+        List<TeamManager> readyTeams = new ArrayList<>();
+        for (TeamManager team : teams) {
+            if (team.getPlayers().size() == 4) {
+                readyTeams.add(team);
+                if (readyTeams.size() == 4) {
+                    readyTeamSets.add(new ArrayList<>(readyTeams));
+                    readyTeams.clear();
+                }
+            }
+        }
+        if (!readyTeamSets.isEmpty()) {
+            startGameForReadyTeams();
+        }
     }
 
-    private void startNextRound() {
+    private void startGameForReadyTeams() {
+        if (currentMode == GameMode.LOBBY && !readyTeamSets.isEmpty()) {
+            List<TeamManager> startingTeams = readyTeamSets.poll();
+            if (startingTeams != null) {
+                currentRound = 0;
+                currentMode = GameMode.IN_GAME;
+                startNextRound(startingTeams);
+            }
+        }
+    }
+
+    private void startNextRound(List<TeamManager> startingTeams) {
         if (currentRound >= totalRounds) {
-            endGame();
+            endGame(startingTeams);
             return;
         }
 
@@ -85,13 +114,13 @@ public class RoundManager {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("{round}", String.valueOf(currentRound));
         replacements.put("{theme}", getCurrentTheme());
-        broadcastMessageToAll(Lang.ROUND_START, replacements);
+        broadcastMessageToTeams(startingTeams, Lang.ROUND_START, replacements);
 
         roundTimer = new CountdownTimer(plugin, 90,
                 () -> {
                     // Before Timer starts (optional)
                 },
-                this::endCurrentRound,
+                () -> endCurrentRound(startingTeams),
                 (timer) -> {
                     // Every second action (optional)
                 }
@@ -99,21 +128,18 @@ public class RoundManager {
         roundTimer.scheduleTimer();
     }
 
-    private void endCurrentRound() {
+    private void endCurrentRound(List<TeamManager> startingTeams) {
         Map<String, String> replacements = new HashMap<>();
         replacements.put("{round}", String.valueOf(currentRound));
-        broadcastMessageToAll(Lang.ROUND_END, replacements);
-        // Handle end of round logic, such as checking if players have placed the correct blocks
-        checkRoundResults();
-        startNextRound();
+        broadcastMessageToTeams(startingTeams, Lang.ROUND_END, replacements);
+        checkRoundResults(startingTeams);
+        startNextRound(startingTeams);
     }
 
-    private void checkRoundResults() {
-        // Implement logic to check if players have placed the correct blocks and award points to teams
-        for (TeamManager team : teams) {
+    private void checkRoundResults(List<TeamManager> startingTeams) {
+        for (TeamManager team : startingTeams) {
             boolean allCorrect = true;
             for (Player player : team.getPlayers()) {
-                // Check if the player placed the correct block (simplified example)
                 if (player.getLocation().getBlock().getType() != currentThemeBlock) {
                     allCorrect = false;
                     break;
@@ -126,19 +152,20 @@ public class RoundManager {
         }
     }
 
-    private void endGame() {
+    private void endGame(List<TeamManager> startingTeams) {
         currentMode = GameMode.END;
-        broadcastMessageToAll(Lang.GAME_END, null);
-        announceWinners();
+        broadcastMessageToTeams(startingTeams, Lang.GAME_END, null);
+        announceWinners(startingTeams);
+        startGameForReadyTeams();
     }
 
-    private void announceWinners() {
-        TeamManager winningTeam = teams.stream().max(Comparator.comparingInt(TeamManager::getPoints)).orElse(null);
+    private void announceWinners(List<TeamManager> startingTeams) {
+        TeamManager winningTeam = startingTeams.stream().max(Comparator.comparingInt(TeamManager::getPoints)).orElse(null);
         if (winningTeam != null) {
             Map<String, String> replacements = new HashMap<>();
             replacements.put("{team}", winningTeam.getName());
             replacements.put("{points}", String.valueOf(winningTeam.getPoints()));
-            broadcastMessageToAll(Lang.WINNING_TEAM, replacements);
+            broadcastMessageToTeams(startingTeams, Lang.WINNING_TEAM, replacements);
         }
     }
 
@@ -180,6 +207,12 @@ public class RoundManager {
     private void broadcastMessageToAll(Lang lang, Map<String, String> replacements) {
         for (Player player : Bukkit.getOnlinePlayers()) {
             player.sendMessage(lang.getConfigValue(player, replacements));
+        }
+    }
+
+    private void broadcastMessageToTeams(List<TeamManager> teams, Lang lang, Map<String, String> replacements) {
+        for (TeamManager team : teams) {
+            broadcastMessageToTeam(team, lang, replacements);
         }
     }
 

@@ -23,6 +23,7 @@ import java.util.*;
  * @newPackage org.cyci.mc.minecraft.telepathy.utils.C;
  * @oldPackage import org.bukkit.entity.Player.sendMessage(C.c(Lang.VALUE));
  */
+@Deprecated(forRemoval = true)
 public class LobbyManager {
     private final Map<UUID, Player> playerQueue;
     private final List<GameInstanceManager> activeGames;
