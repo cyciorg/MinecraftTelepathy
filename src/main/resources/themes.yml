@@ -1,0 +1,13 @@
+themes:
+  Forest:
+    - OAK_LOG
+    - SPRUCE_LOG
+    - BIRCH_LOG
+  Desert:
+    - SAND
+    - SANDSTONE
+    - CACTUS
+  Ocean:
+    - WATER_BUCKET
+    - SEA_LANTERN
+    - PRISMARINE

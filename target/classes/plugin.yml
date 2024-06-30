@@ -1,0 +1,12 @@
+name: MinecraftTelepathy
+version: '1.0-SNAPSHOT'
+main: org.cyci.mc.minecrafttelepathy.Registry
+api-version: '1.21'
+
+commands:
+  example:
+    description: An example command
+    aliases: [ ex ]
+    usage: /example
+    permission: example.use
+    permission-message: You don't have permission to use this command.
