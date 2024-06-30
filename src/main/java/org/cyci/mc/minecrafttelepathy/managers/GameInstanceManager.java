@@ -42,12 +42,10 @@ public class GameInstanceManager {
     }
 
     private void initializeTeams() {
-        int teamCount = Math.min(maxTeams, players.size() / minPlayersPerTeam);
-        for (int i = 1; i <= teamCount; i++) {
-            // add colors soon
-
-            teams.add(new TeamManager(TeamColor.random(), "Team " + i));
-        }
+        TeamColor team = TeamColor.random();
+        String color = team.getColoredName();
+        String name = "Team: " + team.getId();
+        teams.add(new TeamManager(color, name));
         assignPlayersToTeams();
     }
 

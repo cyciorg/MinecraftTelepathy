@@ -1,5 +1,7 @@
 package org.cyci.mc.minecrafttelepathy.enums;
 
+import java.util.Random;
+
 /**
  * org.cyci.mc.minecrafttelepathy.enums
  * --------------------------
@@ -16,13 +18,25 @@ public enum TeamColor {
     private final Integer _id;
     private final String _coloredName;
 
+    private static final Random RANDOM = new Random();
+
     TeamColor(Integer id, String coloredName) {
         this._id = id;
         this._coloredName = coloredName;
     }
 
-    public static TeamColor random() {
+    public Integer getId() {
+        return _id;
+    }
 
+    public String getColoredName() {
+        return _coloredName;
+    }
+
+    public static TeamColor random() {
+        TeamColor[] teams = TeamColor.values();
+        int x = RANDOM.nextInt(teams.length);
+        return TeamColor.class.getEnumConstants()[x];
     }
 }
 

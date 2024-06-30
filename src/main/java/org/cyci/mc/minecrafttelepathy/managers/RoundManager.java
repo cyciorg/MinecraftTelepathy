@@ -48,11 +48,10 @@ public class RoundManager {
     }
 
     private void initializeTeams() {
-        for (int i = 1; i <= maxTeams; i++) {
-            String color = "Team Color " + i;
-            String name = "Team Name " + i;
-            teams.add(new TeamManager(TeamColor.random(), name));
-        }
+        TeamColor team = TeamColor.random();
+        String color = team.getColoredName();
+        String name = "Team: " + team.getId();
+        teams.add(new TeamManager(color, name));
     }
 
     public void assignPlayerToTeam(Player player) {
