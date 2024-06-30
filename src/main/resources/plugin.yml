@@ -7,9 +7,9 @@ softdepend:
   - PlaceholderAPI
 
 commands:
-  example:
-    description: An example command
-    aliases: [ ex ]
-    usage: /example
-    permission: example.use
+  telepathy:
+    description: The main Telepathy command
+    aliases: [ mtp ]
+    usage: /telepathy
+    permission: *
     permission-message: You don't have permission to use this command.
