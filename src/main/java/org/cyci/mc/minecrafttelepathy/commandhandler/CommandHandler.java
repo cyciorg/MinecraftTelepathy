@@ -6,6 +6,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.cyci.mc.minecrafttelepathy.Registry;
 import org.cyci.mc.minecrafttelepathy.api.CommandInfo;
 import org.cyci.mc.minecrafttelepathy.api.SubCommandInfo;
 import org.cyci.mc.minecrafttelepathy.enums.LogLevel;
@@ -27,6 +28,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
 
     private final Map<String, CommandData> commandMap = new HashMap<>();
     private final Map<String, Object> commandInstances = new HashMap<>();
+    private Logger logger;
 
     public CommandHandler(Object... commandClasses) {
         for (Object commandClass : commandClasses) {

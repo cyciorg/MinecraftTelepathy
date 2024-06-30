@@ -37,6 +37,7 @@ public final class Registry extends JavaPlugin {
         currentMode = GameMode.LOBBY; // Initialize with LOBBY mode
 
         ThemeManager.initialize(this);
+        // Will check the max players allowed to play from a config
         lobbyManager = new LobbyManager(100, 2, 4, 2, 4);
         teams = new ArrayList<>();
         messagesFile = new ConfigWrapper(this, "messages.yml");
@@ -46,7 +47,7 @@ public final class Registry extends JavaPlugin {
 
         // Register commands from within the api
         CommandHandler commandHandler = new CommandHandler(new MainCommand());
-        commandHandler.registerCommand("example", this);
+        commandHandler.registerCommand("telepathy", this);
 
         // Load messages from config
         loadMessages();
@@ -97,52 +98,6 @@ public final class Registry extends JavaPlugin {
         return instance;
     }
 
-    public GameMode getCurrentMode() {
-        return currentMode;
-    }
-
-    public void setCurrentMode(GameMode mode) {
-        this.currentMode = mode;
-    }
-
-    public List<TeamManager> getTeams() {
-        return teams;
-    }
-
-    public void addTeam(TeamManager team) {
-        teams.add(team);
-    }
-
-    public void removeTeam(TeamManager team) {
-        teams.remove(team);
-    }
-
-    public TeamManager getTeamByName(String name) {
-        for (TeamManager team : teams) {
-            if (team.getName().equalsIgnoreCase(name)) {
-                return team;
-            }
-        }
-        return null;
-    }
-
-    // Method to start lobby countdown using CountdownTimer
-    public void startLobbyCountdown() {
-        if (currentMode == GameMode.LOBBY) {
-            currentMode = GameMode.STARTING;
-
-            Runnable beforeTimer = () -> Bukkit.broadcastMessage(Lang.PREFIX.getConfigValue() + " Lobby countdown started! Game will start in " + lobbyCountdownTimer.getTotalSeconds() + " seconds.");
-
-            Consumer<CountdownTimer> everySecond = timer -> Bukkit.getOnlinePlayers().forEach(player -> player.sendActionBar(Lang.PREFIX.getConfigValue() + " Game starting in " + timer.getSecondsLeft() + " seconds..."));
-
-            // Start the game when countdown ends
-            Runnable afterTimer = this::startGame;
-
-            lobbyCountdownTimer = new CountdownTimer(this, 60, beforeTimer, afterTimer, everySecond);
-            lobbyCountdownTimer.scheduleTimer();
-        }
-    }
-
     // Method to stop lobby countdown
     public void stopLobbyCountdown() {
         if (lobbyCountdownTimer != null && lobbyCountdownTimer.isRunning()) {
@@ -150,31 +105,6 @@ public final class Registry extends JavaPlugin {
             lobbyCountdownTimer = null;
             currentMode = GameMode.LOBBY;
             Bukkit.broadcastMessage(Lang.PREFIX.getConfigValue() + " Lobby countdown stopped.");
-        }
-    }
-
-    // Method to start the game
-    private void startGame() {
-        // Transition to IN_GAME mode, initialize game logic, etc.
-        currentMode = GameMode.IN_GAME;
-        Bukkit.broadcastMessage(Lang.PREFIX.getConfigValue() + " Game started! Good luck!");
-
-        // Implement game start logic here
-    }
-
-    // Utility method to handle player joins during lobby phase
-    public void handlePlayerJoin(Player player) {
-        if (currentMode == GameMode.LOBBY || currentMode == GameMode.WAITING) {
-            player.sendMessage(Lang.PREFIX.getConfigValue() + " Welcome to Minecraft Telepathy!");
-        } else {
-            player.sendMessage(Lang.PREFIX.getConfigValue() + " The game is already in progress.");
-        }
-    }
-
-    // Utility method to handle player leaves during lobby phase
-    public void handlePlayerLeave(Player player) {
-        if (currentMode == GameMode.LOBBY || currentMode == GameMode.WAITING) {
-            player.sendMessage(Lang.PREFIX.getConfigValue() + " You left Minecraft Telepathy lobby.");
         }
     }
 
