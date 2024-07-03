@@ -1,5 +1,12 @@
 package org.cyci.mc.minecrafttelepathy.managers;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.TextColor;
+import org.bukkit.entity.Player;
+import org.cyci.mc.minecrafttelepathy.utils.Logger;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,11 +29,13 @@ public class PartyManager {
     private final Map<UUID, Party> partyMap;
     private final Map<UUID, UUID> playerPartyMap; // Maps player UUIDs to party UUIDs
     private final MySQLManager db;
+    private final Logger logger;
 
-    public PartyManager(MySQLManager db) {
+    public PartyManager(MySQLManager db, Logger logger) {
         this.db = db;
         this.partyMap = new HashMap<>();
         this.playerPartyMap = new HashMap<>();
+        this.logger = logger;
         loadPartiesFromDatabase();
     }
 
@@ -54,7 +63,7 @@ public class PartyManager {
             }
 
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
         }
     }
 
@@ -81,7 +90,7 @@ public class PartyManager {
                 statement.setString(3, String.join(",", party.getMembers().stream().map(UUID::toString).toArray(String[]::new)));
                 statement.executeUpdate();
             } catch (SQLException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
         });
     }
@@ -95,7 +104,7 @@ public class PartyManager {
                 statement.setString(2, party.getId().toString());
                 statement.executeUpdate();
             } catch (SQLException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
         });
     }
@@ -107,7 +116,7 @@ public class PartyManager {
                 statement.setString(1, partyId.toString());
                 statement.executeUpdate();
             } catch (SQLException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
         });
     }
@@ -170,15 +179,32 @@ public class PartyManager {
     }
 
     // work on this
-    public void addToParty(UUID partyId, UUID uniqueId) {
+    public void addToParty(UUID partyId, Player partyLeader, Player invitee) {
         Party party = partyMap.get(partyId);
-        if (party == null || !party.getLeader().equals(uniqueId)) {
+        if (party == null || !party.getLeader().equals(invitee.getUniqueId())) {
             // Party does not exist, invitee is not the leader
             return;
         }
-        if (!party.isMember(uniqueId)) {
+        if (!party.isMember(invitee.getUniqueId())) {
             // Member is not in the party
             return;
         }
+        // Create interactive message for the invitee
+        Component acceptButton = Component.text("[Accept]")
+                .color(TextColor.color(0x00FF00))
+                .clickEvent(ClickEvent.runCommand("/party accept " + partyLeader.getName()))
+                .hoverEvent(HoverEvent.showText(Component.text("Click to accept the party invite")));
+
+        Component declineButton = Component.text("[Decline]")
+                .color(TextColor.color(0xFF0000))
+                .clickEvent(ClickEvent.runCommand("/party decline " + partyLeader.getName()))
+                .hoverEvent(HoverEvent.showText(Component.text("Click to decline the party invite")));
+
+        Component message = Component.text(partyLeader.getName() + " has invited you to join their party. ")
+                .append(acceptButton)
+                .append(Component.text(" "))
+                .append(declineButton);
+
+        invitee.sendMessage(message);
     }
 }

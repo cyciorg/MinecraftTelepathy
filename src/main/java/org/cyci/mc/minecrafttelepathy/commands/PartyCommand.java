@@ -86,7 +86,7 @@ public class PartyCommand {
             return;
         }
 
-        partyManager.addToParty(party.getId(), invitee.getUniqueId());
+        partyManager.addToParty(party.getId(), inviter, invitee);
         invitee.sendMessage(Lang.PLAYER_JOIN.getConfigValue(invitee));
 
         Map<String, String> replacements = new HashMap<>();

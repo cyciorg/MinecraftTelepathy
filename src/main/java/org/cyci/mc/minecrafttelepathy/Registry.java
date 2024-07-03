@@ -54,7 +54,7 @@ public final class Registry extends JavaPlugin {
         this.mysqlManager = new MySQLManager("host", 3306, "database", "username", "password");
         mysqlManager.connectAsync().join(); // Synchronously wait for the database connection
         this.friendManager = new FriendManager(mysqlManager, logger);
-        this.partyManager = new PartyManager(mysqlManager);
+        this.partyManager = new PartyManager(mysqlManager, logger);
 
         // Register commands from within the api
         commandHandler = new CommandHandler(
@@ -62,9 +62,6 @@ public final class Registry extends JavaPlugin {
                 new PartyCommand(partyManager),
                 new MainCommand()
         );
-
-        commandHandler.registerCommand("friend", this);
-        commandHandler.registerCommand("party", this);
 
         // Load messages from config
         loadMessages();
