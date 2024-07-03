@@ -5,12 +5,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.cyci.mc.minecrafttelepathy.commandhandler.CommandHandler;
 import org.cyci.mc.minecrafttelepathy.commands.MainCommand;
+import org.cyci.mc.minecrafttelepathy.commands.PartyCommand;
+import org.cyci.mc.minecrafttelepathy.commands.FriendsCommand;
 import org.cyci.mc.minecrafttelepathy.enums.GameMode;
 import org.cyci.mc.minecrafttelepathy.lang.Lang;
 import org.cyci.mc.minecrafttelepathy.listeners.TelepathyListener;
-import org.cyci.mc.minecrafttelepathy.managers.LobbyManager;
-import org.cyci.mc.minecrafttelepathy.managers.MySQLManager;
-import org.cyci.mc.minecrafttelepathy.managers.TeamManager;
+import org.cyci.mc.minecrafttelepathy.managers.*;
 import org.cyci.mc.minecrafttelepathy.themes.ThemeManager;
 import org.cyci.mc.minecrafttelepathy.utils.ConfigWrapper;
 import org.cyci.mc.minecrafttelepathy.utils.CountdownTimer;
@@ -27,63 +27,45 @@ public final class Registry extends JavaPlugin {
     private CountdownTimer lobbyCountdownTimer;
     private ConfigWrapper messagesFile;
     private List<TeamManager> teams;
-    private LobbyManager lobbyManager;
+    private RoundManager roundManager; // Use RoundManager instead of LobbyManager
     private Logger logger;
     private MySQLManager mysqlManager;
+    private FriendManager friendManager;
+    private PartyManager partyManager;
+    private CommandHandler commandHandler;
 
     @Override
     public void onEnable() {
         instance = this;
         currentMode = GameMode.LOBBY; // Initialize with LOBBY mode
 
+        // Initialize ThemeManager
         ThemeManager.initialize(this);
-        // Will check the max players allowed to play from a config
-        lobbyManager = new LobbyManager(100, 2, 4, 2, 4);
-        teams = new ArrayList<>();
+
+        // Initialize RoundManager with totalRounds and maxTeams
+        roundManager = new RoundManager(this, 10, 4); // Example values for totalRounds and maxTeams
+        teams = roundManager.getTeams(); // Get the list of teams from RoundManager
         messagesFile = new ConfigWrapper(this, "messages.yml");
 
         // Register event listeners
         getServer().getPluginManager().registerEvents(new TelepathyListener(), this);
 
         // Register commands from within the api
-        CommandHandler commandHandler = new CommandHandler(new MainCommand());
-        commandHandler.registerCommand("telepathy", this);
+        this.mysqlManager = new MySQLManager("host", 3306, "database", "username", "password");
+        mysqlManager.connectAsync().join(); // Synchronously wait for the database connection
+        this.friendManager = new FriendManager(mysqlManager);
+        this.partyManager = new PartyManager(mysqlManager);
+
+        commandHandler = new CommandHandler(
+                new FriendsCommand(friendManager),
+                new PartyCommand(partyManager)
+        );
+
+        commandHandler.registerCommand("friend", this);
+        commandHandler.registerCommand("party", this);
 
         // Load messages from config
         loadMessages();
-
-        //if (isMySQLConfigValid(mysqlHost, mysqlPort, mysqlDatabase, mysqlUsername, mysqlPassword)) {
-            //mysqlManager = new MySQLManager(mysqlHost, mysqlPort, mysqlDatabase, mysqlUsername, mysqlPassword);
-
-            mysqlManager.connectAsync().thenRun(() -> {
-                getLogger().info("Connected to MySQL!");
-                //playerTimeTracker = new PlayerTimeTracker(this.mysqlManager.getDataSource());
-                try {
-//                    Bukkit.getServer().getPluginManager().registerEvents(new PlayerJoin(), this);
-//                    Bukkit.getServer().getPluginManager().registerEvents(new PlayerLeave(), this);
-//                    Bukkit.getServer().getPluginManager().registerEvents(new PlayerInteract(), this);
-//                    Bukkit.getServer().getPluginManager().registerEvents(new InventoryMoveItemEvent(), this);
-                } catch (Exception e) {
-                    getLogger().info(e.getMessage());
-                } finally {
-                    getLogger().info("Registered the events");
-                }
-
-                int updateInterval = 1200;
-                //new PlaytimeUpdaterTask().runTaskTimer(this, 0, updateInterval);
-            }).exceptionally(e -> {
-                getLogger().severe("Error: " + e.getMessage());
-                e.printStackTrace();
-                getLogger().severe("Disabling the plugin due to MySQL connection failure...");
-                getServer().getPluginManager().disablePlugin(this);
-                return null;
-            });
-        //} else {
-        //    getLogger().severe("MySQL configuration is not valid. Please provide correct MySQL information in your config.yml.");
-        //    getLogger().severe("Disabling the plugin...");
-        //    getServer().getPluginManager().disablePlugin(this);
-        //}
-
 
         getLogger().info("Minecraft Telepathy has been enabled!");
     }
@@ -91,6 +73,7 @@ public final class Registry extends JavaPlugin {
     @Override
     public void onDisable() {
         stopLobbyCountdown(); // Ensure lobby countdown is stopped on plugin disable
+        roundManager.resetGame(); // Ensure game is reset on plugin disable
         getLogger().info("Minecraft Telepathy has been disabled.");
     }
 
@@ -120,8 +103,8 @@ public final class Registry extends JavaPlugin {
         return teams.toArray(new TeamManager[0]);
     }
 
-    public LobbyManager getLobbyManager() {
-        return this.lobbyManager;
+    public RoundManager getRoundManager() {
+        return this.roundManager;
     }
 
     public MySQLManager getMySQLManager() {

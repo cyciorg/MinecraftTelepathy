@@ -22,20 +22,13 @@ import java.util.List;
 public class GameInstanceManager {
     private final List<Player> players;
     private final List<TeamManager> teams;
-    private final int minPlayersPerTeam;
-    private final int maxPlayersPerTeam;
-    private final int minTeams;
-    private final int maxTeams;
     private final Logger logger;
     private GameMode currentMode;
 
-    public GameInstanceManager(List<Player> players, int minPlayersPerTeam, int maxPlayersPerTeam, int minTeams, int maxTeams) {
+    public GameInstanceManager(List<Player> players) {
         this.players = players;
         this.teams = new ArrayList<>();
-        this.minPlayersPerTeam = minPlayersPerTeam;
-        this.maxPlayersPerTeam = maxPlayersPerTeam;
-        this.minTeams = minTeams;
-        this.maxTeams = maxTeams;
+
         this.logger = Logger.getInstance(Registry.getInstance());
         this.currentMode = GameMode.LOBBY;
         initializeTeams();

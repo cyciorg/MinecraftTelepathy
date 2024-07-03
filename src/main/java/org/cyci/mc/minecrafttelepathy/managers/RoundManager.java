@@ -102,7 +102,7 @@ public class RoundManager {
         }
     }
 
-    private void startNextRound(List<TeamManager> startingTeams) {
+    public void startNextRound(List<TeamManager> startingTeams) {
         if (currentRound >= totalRounds) {
             endGame(startingTeams);
             return;
@@ -199,9 +199,16 @@ public class RoundManager {
         return themes.get(currentRound % themes.size()); // Cycle through themes
     }
 
-    private Material getCurrentThemeBlock() {
-        String currentTheme = getCurrentTheme();
-        return ThemeManager.getRandomBlockForTheme(currentTheme);
+    public Material getCurrentThemeBlock() {
+        if (currentThemeBlock == null) {
+            String currentTheme = getCurrentTheme();
+            currentThemeBlock = ThemeManager.getRandomBlockForTheme(currentTheme);
+        }
+        return currentThemeBlock;
+    }
+
+    public void resetCurrentThemeBlock() {
+        currentThemeBlock = null;
     }
 
     private void broadcastMessageToAll(Lang lang, Map<String, String> replacements) {

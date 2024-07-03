@@ -11,3 +11,7 @@ themes:
     - WATER_BUCKET
     - SEA_LANTERN
     - PRISMARINE
+  Shiny:
+    - GOLD_BLOCK
+    - GLOWSTONE
+    - GOLD_ORE

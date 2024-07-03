@@ -1,6 +1,5 @@
 package org.cyci.mc.minecrafttelepathy.commandhandler;
 
-import jdk.jfr.internal.Logger;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -10,6 +9,8 @@ import org.cyci.mc.minecrafttelepathy.Registry;
 import org.cyci.mc.minecrafttelepathy.api.CommandInfo;
 import org.cyci.mc.minecrafttelepathy.api.SubCommandInfo;
 import org.cyci.mc.minecrafttelepathy.enums.LogLevel;
+import org.cyci.mc.minecrafttelepathy.lang.Lang;
+import org.cyci.mc.minecrafttelepathy.utils.Logger;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -50,12 +51,12 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         CommandData commandData = commandMap.get(label.toLowerCase());
         if (commandData == null) {
-            sender.sendMessage("Unknown command. Type \"/help\" for help.");
+            sender.sendMessage("Unknown command. Type \"/telepathy help\" for help.");
             return true;
         }
 
         if (!commandData.getCommandInfo().permission().isEmpty() && !sender.hasPermission(commandData.getCommandInfo().permission())) {
-            sender.sendMessage("You don't have permission to use this command.");
+            sender.sendMessage(Lang.NO_PERM.getConfigValue(null));
             return true;
         }
 
@@ -63,7 +64,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         SubCommandData subCommandData = commandData.getSubCommand(subCommand);
         if (subCommandData != null) {
             if (!subCommandData.getSubCommandInfo().permission().isEmpty() && !sender.hasPermission(subCommandData.getSubCommandInfo().permission())) {
-                sender.sendMessage("You don't have permission to use this subcommand.");
+                sender.sendMessage(Lang.NO_PERM.getConfigValue(null));
                 return true;
             }
             try {

@@ -28,7 +28,9 @@ public enum Lang {
     PLAYER_LEAVE("messages.player_leave", "{prefix} &e{player} has left the game."),
     GAME_INSTANCE_START("messages.game_instance_start", "{prefix} &aA new game instance has started with {players} players!"),
     GAME_INSTANCE_END("messages.game_instance_end", "{prefix} &eGame instance has ended."),
-    PLAYER_STATS("messages.player_stats", "{prefix} &7{player}'s stats - Points: &a{points}, Wins: &a{wins}, Times Played: &a{times_played}");
+    PLAYER_STATS("messages.player_stats", "{prefix} &7{player}'s stats - Points: &a{points}, Wins: &a{wins}, Times Played: &a{times_played}"),
+    GAME_NOT_IN_PLAY("messages.game_not_in_play", "{prefix} &cThe game is not currently in play!"),
+    BLOCK_OUT_OF_BOUNDS("messages.block_out_of_bounds", "{prefix} &cYou can only place blocks within the game map!");
 
 
     private final String path;

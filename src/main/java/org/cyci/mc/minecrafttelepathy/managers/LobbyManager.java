@@ -77,7 +77,7 @@ public class LobbyManager {
              */
             int delay = random.nextInt(maxGameStartDelay - minGameStartDelay + 1) + minGameStartDelay;
             Bukkit.getScheduler().runTaskLater(Registry.getInstance(), () -> {
-                GameInstanceManager gameInstance = new GameInstanceManager(playersToStartGame, minPlayersPerTeam, maxPlayersPerTeam, minTeams, maxTeams);
+                GameInstanceManager gameInstance = new GameInstanceManager(playersToStartGame);
                 activeGames.add(gameInstance);
                 gameInstance.startGame();
                 logger.info("New game instance started with " + playersToStartGame.size() + " players after a " + delay + " second delay.");

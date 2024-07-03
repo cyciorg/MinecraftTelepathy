@@ -9,6 +9,7 @@ import org.cyci.mc.minecrafttelepathy.Registry;
 import org.cyci.mc.minecrafttelepathy.lang.Lang;
 import org.cyci.mc.minecrafttelepathy.managers.LobbyManager;
 import org.cyci.mc.minecrafttelepathy.managers.MySQLManager;
+import org.cyci.mc.minecrafttelepathy.managers.RoundManager;
 import org.cyci.mc.minecrafttelepathy.trackers.PlayerTimeTracker;
 import org.cyci.mc.minecrafttelepathy.utils.Logger;
 
@@ -23,32 +24,32 @@ import org.cyci.mc.minecrafttelepathy.utils.Logger;
  * @created - Sun - June/Sun/2024
  */
 public class PlayerListener implements Listener {
-    private final LobbyManager lobbyManager;
+    private final RoundManager roundManager;
     private final MySQLManager mySQLManager;
     private final Logger logger;
     private final PlayerTimeTracker playerTimeTracker;
 
     public PlayerListener() {
-        this.lobbyManager = Registry.getInstance().getLobbyManager();
+        this.roundManager = Registry.getInstance().getRoundManager();
         this.mySQLManager = Registry.getInstance().getMySQLManager();
         this.logger = Logger.getInstance(Registry.getInstance());
         this.playerTimeTracker = new PlayerTimeTracker(mySQLManager.getDataSource());
     }
 
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        playerTimeTracker.addPlayerIfNotExists(event.getPlayer());
-        playerTimeTracker.recordLogin(event.getPlayer().getUniqueId().toString());
-
-        event.getPlayer().sendMessage(Lang.PLAYER_JOIN.getConfigValue(event.getPlayer(), "{player}", event.getPlayer().getName()));
-        lobbyManager.addPlayerToQueue(event.getPlayer());
-    }
-
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        lobbyManager.removePlayerFromQueue(event.getPlayer());
-        event.getPlayer().sendMessage(Lang.PLAYER_LEAVE.getConfigValue(event.getPlayer(), "{player}", event.getPlayer().getName()));
-    }
+//    @EventHandler
+//    public void onPlayerJoin(PlayerJoinEvent event) {
+//        playerTimeTracker.addPlayerIfNotExists(event.getPlayer());
+//        playerTimeTracker.recordLogin(event.getPlayer().getUniqueId().toString());
+//
+//        event.getPlayer().sendMessage(Lang.PLAYER_JOIN.getConfigValue(event.getPlayer(), "{player}", event.getPlayer().getName()));
+//        roundManager.
+//    }
+//
+//    @EventHandler
+//    public void onPlayerQuit(PlayerQuitEvent event) {
+//        lobbyManager.removePlayerFromQueue(event.getPlayer());
+//        event.getPlayer().sendMessage(Lang.PLAYER_LEAVE.getConfigValue(event.getPlayer(), "{player}", event.getPlayer().getName()));
+//    }
 
     @EventHandler
     public void onPlayerStatisticIncrement(PlayerStatisticIncrementEvent event) {

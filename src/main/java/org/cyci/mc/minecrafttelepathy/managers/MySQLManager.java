@@ -46,6 +46,8 @@ public class MySQLManager {
                 if (!conn.isClosed()) {
                     logger.info("Connected to MySQL!");
                     createPlayerDataTable();
+                    createPartyTable();
+                    createFriendsTable();
                 } else {
                     logger.error("Connection is closed immediately after connecting.");
                 }
@@ -121,6 +123,36 @@ public class MySQLManager {
             logger.info("Creating player_data table if it doesn't exist.");
         } catch (SQLException e) {
             logger.error("Error creating player_data table: " + e.getMessage());
+        }
+    }
+
+    public void createPartyTable() {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(
+                     "CREATE TABLE IF NOT EXISTS parties ("
+                             + "id VARCHAR(36) PRIMARY KEY,"
+                             + "leader VARCHAR(36) NOT NULL,"
+                             + "members TEXT NOT NULL"
+                             + ");")) {
+            statement.execute();
+            logger.info("Creating parties table if it doesn't exist.");
+        } catch (SQLException e) {
+            logger.error("Error creating parties table: " + e.getMessage());
+        }
+    }
+
+    public void createFriendsTable() {
+        try (Connection conn = getConnection();
+             PreparedStatement statement = conn.prepareStatement(
+                     "CREATE TABLE IF NOT EXISTS friends ("
+                             + "player_uuid VARCHAR(36) NOT NULL,"
+                             + "friend_uuid VARCHAR(36) NOT NULL,"
+                             + "PRIMARY KEY (player_uuid, friend_uuid)"
+                             + ");")) {
+            statement.execute();
+            logger.info("Creating friends table if it doesn't exist.");
+        } catch (SQLException e) {
+            logger.error("Error creating friends table: " + e.getMessage());
         }
     }
 
