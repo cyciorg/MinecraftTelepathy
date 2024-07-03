@@ -27,7 +27,7 @@ public final class Registry extends JavaPlugin {
     private CountdownTimer lobbyCountdownTimer;
     private ConfigWrapper messagesFile;
     private List<TeamManager> teams;
-    private RoundManager roundManager; // Use RoundManager instead of LobbyManager
+    private RoundManager roundManager;
     private Logger logger;
     private MySQLManager mysqlManager;
     private FriendManager friendManager;

@@ -7,7 +7,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerStatisticIncrementEvent;
 import org.cyci.mc.minecrafttelepathy.Registry;
 import org.cyci.mc.minecrafttelepathy.lang.Lang;
-import org.cyci.mc.minecrafttelepathy.managers.LobbyManager;
 import org.cyci.mc.minecrafttelepathy.managers.MySQLManager;
 import org.cyci.mc.minecrafttelepathy.managers.RoundManager;
 import org.cyci.mc.minecrafttelepathy.trackers.PlayerTimeTracker;
