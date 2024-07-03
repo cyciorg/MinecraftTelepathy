@@ -61,7 +61,7 @@ public class GameInstanceManager {
     public void endGame() {
         currentMode = GameMode.END;
         // Additional logic to end the game
-        Registry.getInstance().getLobbyManager().onGameEnd(this);
+        Registry.getInstance().getRoundManager().resetGame();
     }
 
     public List<TeamManager> getTeams() {

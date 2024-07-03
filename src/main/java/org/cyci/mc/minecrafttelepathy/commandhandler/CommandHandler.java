@@ -7,13 +7,18 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.cyci.mc.minecrafttelepathy.Registry;
 import org.cyci.mc.minecrafttelepathy.api.CommandInfo;
+import org.cyci.mc.minecrafttelepathy.api.PaginatedCommand;
+import org.cyci.mc.minecrafttelepathy.api.PaginatedSubcommand;
 import org.cyci.mc.minecrafttelepathy.api.SubCommandInfo;
 import org.cyci.mc.minecrafttelepathy.enums.LogLevel;
 import org.cyci.mc.minecrafttelepathy.lang.Lang;
 import org.cyci.mc.minecrafttelepathy.utils.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * org.cyci.mc.minecrafttelepathy.commandhandler
@@ -43,6 +48,15 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
                         commandMap.put(alias.toLowerCase(), commandData);
                     }
                 }
+                if (method.isAnnotationPresent(PaginatedCommand.class)) {
+                    PaginatedCommand paginatedCommand = method.getAnnotation(PaginatedCommand.class);
+                    CommandData commandData = new CommandData(paginatedCommand, method, commandClass);
+                    commandMap.put(paginatedCommand.name().toLowerCase(), commandData);
+                    commandInstances.put(paginatedCommand.name().toLowerCase(), commandClass);
+                    for (String alias : paginatedCommand.aliases()) {
+                        commandMap.put(alias.toLowerCase(), commandData);
+                    }
+                }
             }
         }
     }
@@ -55,7 +69,11 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (!commandData.getCommandInfo().permission().isEmpty() && !sender.hasPermission(commandData.getCommandInfo().permission())) {
+        if (commandData.isPaginated()) {
+            return handlePaginatedCommand(sender, command, label, args, commandData);
+        }
+
+        if (!commandData.getPermission().isEmpty() && !sender.hasPermission(commandData.getPermission())) {
             sender.sendMessage(Lang.NO_PERM.getConfigValue(null));
             return true;
         }
@@ -63,16 +81,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         String subCommand = args.length > 0 ? args[0].toLowerCase() : "";
         SubCommandData subCommandData = commandData.getSubCommand(subCommand);
         if (subCommandData != null) {
-            if (!subCommandData.getSubCommandInfo().permission().isEmpty() && !sender.hasPermission(subCommandData.getSubCommandInfo().permission())) {
-                sender.sendMessage(Lang.NO_PERM.getConfigValue(null));
-                return true;
-            }
-            try {
-                subCommandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, Arrays.copyOfRange(args, 1, args.length));
-            } catch (Exception e) {
-                sender.sendMessage("An error occurred while executing the subcommand.");
-                e.printStackTrace();
-            }
+            return handleSubCommand(sender, command, label, args, subCommandData);
         } else {
             try {
                 commandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, args);
@@ -80,6 +89,67 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
                 sender.sendMessage("An error occurred while executing the command.");
                 e.printStackTrace();
             }
+        }
+        return true;
+    }
+
+    private boolean handlePaginatedCommand(CommandSender sender, Command command, String label, String[] args, CommandData commandData) {
+        PaginatedCommand paginatedCommand = (PaginatedCommand) commandData.getCommandInfo();
+        int page = 1;
+        if (args.length > 0) {
+            try {
+                page = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage("Invalid page number. Usage: /" + label + " [page]");
+                return true;
+            }
+        }
+
+        try {
+            commandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, args, page, paginatedCommand.itemsPerPage());
+        } catch (Exception e) {
+            sender.sendMessage("An error occurred while executing the paginated command.");
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    private boolean handleSubCommand(CommandSender sender, Command command, String label, String[] args, SubCommandData subCommandData) {
+        if (!subCommandData.getPermission().isEmpty() && !sender.hasPermission(subCommandData.getPermission())) {
+            sender.sendMessage(Lang.NO_PERM.getConfigValue(null));
+            return true;
+        }
+
+        if (subCommandData.isPaginated()) {
+            return handlePaginatedSubCommand(sender, command, label, args, subCommandData);
+        }
+
+        try {
+            subCommandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, Arrays.copyOfRange(args, 1, args.length));
+        } catch (Exception e) {
+            sender.sendMessage("An error occurred while executing the subcommand.");
+            e.printStackTrace();
+        }
+        return true;
+    }
+
+    private boolean handlePaginatedSubCommand(CommandSender sender, Command command, String label, String[] args, SubCommandData subCommandData) {
+        PaginatedSubcommand paginatedSubCommand = (PaginatedSubcommand) subCommandData.getSubCommandInfo();
+        int page = 1;
+        if (args.length > 1) {
+            try {
+                page = Integer.parseInt(args[1]);
+            } catch (NumberFormatException e) {
+                sender.sendMessage("Invalid page number. Usage: /" + label + " " + subCommandData.getName() + " [page]");
+                return true;
+            }
+        }
+
+        try {
+            subCommandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, Arrays.copyOfRange(args, 2, args.length), page, paginatedSubCommand.itemsPerPage());
+        } catch (Exception e) {
+            sender.sendMessage("An error occurred while executing the paginated subcommand.");
+            e.printStackTrace();
         }
         return true;
     }
@@ -92,7 +162,9 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         }
 
         if (args.length == 1) {
-            return commandData.getSubCommands();
+            return commandData.getSubCommands().stream()
+                    .filter(subCmd -> sender.hasPermission(commandData.getSubCommand(subCmd).getPermission()))
+                    .collect(Collectors.toList());
         }
 
         SubCommandData subCommandData = commandData.getSubCommand(args[0].toLowerCase());
@@ -100,26 +172,25 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             return Collections.emptyList();
         }
 
+        if (subCommandData.isPaginated() && args.length == 2) {
+            return Collections.singletonList("<page>");
+        }
+
         try {
-            return (List<String>) subCommandData.getMethod().invoke(commandInstances.get(alias.toLowerCase()), sender, command, alias, args);
+            return (List<String>) subCommandData.getMethod().invoke(commandInstances.get(alias.toLowerCase()), sender, command, alias, Arrays.copyOfRange(args, 1, args.length));
         } catch (Exception e) {
-            //Logger.log(LogLevel.WARN);
+            e.printStackTrace();
             return Collections.emptyList();
         }
     }
 
-    public void registerCommand(String commandName, JavaPlugin plugin) {
-        plugin.getCommand(commandName).setExecutor(this);
-        plugin.getCommand(commandName).setTabCompleter(this);
-    }
-
     private static class CommandData {
-        private final CommandInfo commandInfo;
+        private final Object commandInfo;
         private final Method method;
         private final Object instance;
         private final Map<String, SubCommandData> subCommands = new HashMap<>();
 
-        public CommandData(CommandInfo commandInfo, Method method, Object instance) {
+        public CommandData(Object commandInfo, Method method, Object instance) {
             this.commandInfo = commandInfo;
             this.method = method;
             this.instance = instance;
@@ -128,10 +199,14 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
                     SubCommandInfo subCommandInfo = subMethod.getAnnotation(SubCommandInfo.class);
                     subCommands.put(subCommandInfo.name().toLowerCase(), new SubCommandData(subCommandInfo, subMethod));
                 }
+                if (subMethod.isAnnotationPresent(PaginatedSubcommand.class)) {
+                    PaginatedSubcommand paginatedSubCommand = subMethod.getAnnotation(PaginatedSubcommand.class);
+                    subCommands.put(paginatedSubCommand.name().toLowerCase(), new SubCommandData(paginatedSubCommand, subMethod));
+                }
             }
         }
 
-        public CommandInfo getCommandInfo() {
+        public Object getCommandInfo() {
             return commandInfo;
         }
 
@@ -146,23 +221,58 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         public SubCommandData getSubCommand(String name) {
             return subCommands.get(name);
         }
+
+        public boolean isPaginated() {
+            return commandInfo instanceof PaginatedCommand;
+        }
+
+        public String getPermission() {
+            if (commandInfo instanceof CommandInfo) {
+                return ((CommandInfo) commandInfo).permission();
+            } else if (commandInfo instanceof PaginatedCommand) {
+                return ((PaginatedCommand) commandInfo).permission();
+            }
+            return "";
+        }
     }
 
     private static class SubCommandData {
-        private final SubCommandInfo subCommandInfo;
+        private final Object subCommandInfo;
         private final Method method;
 
-        public SubCommandData(SubCommandInfo subCommandInfo, Method method) {
+        public SubCommandData(Object subCommandInfo, Method method) {
             this.subCommandInfo = subCommandInfo;
             this.method = method;
         }
 
-        public SubCommandInfo getSubCommandInfo() {
+        public Object getSubCommandInfo() {
             return subCommandInfo;
         }
 
         public Method getMethod() {
             return method;
+        }
+
+        public boolean isPaginated() {
+            return subCommandInfo instanceof PaginatedSubcommand;
+        }
+
+        public String getPermission() {
+            if (subCommandInfo instanceof SubCommandInfo) {
+                return ((SubCommandInfo) subCommandInfo).permission();
+            } else if (subCommandInfo instanceof PaginatedSubcommand) {
+                return ((PaginatedSubcommand) subCommandInfo).permission();
+            }
+            return "";
+        }
+
+        public String getName() {
+            if (subCommandInfo instanceof SubCommandInfo) {
+                return ((SubCommandInfo) subCommandInfo).name();
+            } else if (subCommandInfo instanceof PaginatedSubcommand) {
+                return ((PaginatedSubcommand) subCommandInfo).name();
+            }
+            return "";
         }
     }
 }

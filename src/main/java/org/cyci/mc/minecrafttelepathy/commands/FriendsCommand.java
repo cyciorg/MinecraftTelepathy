@@ -1,9 +1,12 @@
 package org.cyci.mc.minecrafttelepathy.commands;
 
+import net.md_5.bungee.api.ChatColor;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.cyci.mc.minecrafttelepathy.api.CommandInfo;
+import org.cyci.mc.minecrafttelepathy.api.PaginatedSubcommand;
 import org.cyci.mc.minecrafttelepathy.api.SubCommandInfo;
 import org.cyci.mc.minecrafttelepathy.managers.FriendManager;
 
@@ -65,22 +68,44 @@ public class FriendsCommand {
         player.sendMessage(friendName + " has been removed from your friends list.");
     }
 
-    @SubCommandInfo(name = "list", description = "List your friends", usage = "/friend list", permission = "minecrafttelepathy.friend.list")
-    public void listFriends(Player player) {
-        List<UUID> friends = friendManager.getFriends(player.getUniqueId());
-        if (friends.isEmpty()) {
-            player.sendMessage("You have no friends.");
-            return;
-        }
-
-        player.sendMessage("Your friends:");
-        for (UUID friendId : friends) {
-            Player friend = player.getServer().getPlayer(friendId);
-            if (friend != null) {
-                player.sendMessage("- " + friend.getName());
-            } else {
-                player.sendMessage("- " + friendId.toString());
+    @PaginatedSubcommand(
+            name = "list",
+            description = "List your friends",
+            usage = "/friend list [page]",
+            permission = "minecrafttelepathy.friend.list",
+            itemsPerPage = 10
+    )
+    public void listFriends(Player player, Command command, String label, String[] args, int page, int itemsPerPage) {
+        friendManager.getFriends(player.getUniqueId()).thenAccept(friends -> {
+            if (friends.isEmpty()) {
+                player.sendMessage("You have no friends.");
+                return;
             }
-        }
+
+            int totalPages = (int) Math.ceil((double) friends.size() / itemsPerPage);
+            if (page < 1 || page > totalPages) {
+                player.sendMessage("Invalid page number. Valid range: 1-" + totalPages);
+                return;
+            }
+
+            int startIndex = (page - 1) * itemsPerPage;
+            int endIndex = Math.min(startIndex + itemsPerPage, friends.size());
+
+            player.sendMessage(ChatColor.YELLOW + "Your friends (Page " + page + "/" + totalPages + "):");
+            for (int i = startIndex; i < endIndex; i++) {
+                UUID friendId = friends.get(i);
+                Player friend = player.getServer().getPlayer(friendId);
+                if (friend != null) {
+                    player.sendMessage(ChatColor.GREEN + "- " + friend.getName());
+                } else {
+                    OfflinePlayer offlineFriend = player.getServer().getOfflinePlayer(friendId);
+                    player.sendMessage(ChatColor.GRAY + "- " + offlineFriend.getName() + " (Offline)");
+                }
+            }
+
+            if (page < totalPages) {
+                player.sendMessage(ChatColor.YELLOW + "Type '/friend list " + (page + 1) + "' to see the next page.");
+            }
+        });
     }
 }
