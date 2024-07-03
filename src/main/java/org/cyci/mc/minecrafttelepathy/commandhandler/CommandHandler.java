@@ -5,16 +5,13 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.cyci.mc.minecrafttelepathy.Registry;
 import org.cyci.mc.minecrafttelepathy.api.CommandInfo;
 import org.cyci.mc.minecrafttelepathy.api.PaginatedCommand;
 import org.cyci.mc.minecrafttelepathy.api.PaginatedSubcommand;
 import org.cyci.mc.minecrafttelepathy.api.SubCommandInfo;
-import org.cyci.mc.minecrafttelepathy.enums.LogLevel;
 import org.cyci.mc.minecrafttelepathy.lang.Lang;
 import org.cyci.mc.minecrafttelepathy.utils.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -62,7 +59,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, String label, String[] args) {
         CommandData commandData = commandMap.get(label.toLowerCase());
         if (commandData == null) {
             sender.sendMessage("Unknown command. Type \"/telepathy help\" for help.");
@@ -87,7 +84,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
                 commandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, args);
             } catch (Exception e) {
                 sender.sendMessage("An error occurred while executing the command.");
-                e.printStackTrace();
+                logger.error(e.getMessage());
             }
         }
         return true;
@@ -101,7 +98,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
                 page = Integer.parseInt(args[0]);
             } catch (NumberFormatException e) {
                 sender.sendMessage("Invalid page number. Usage: /" + label + " [page]");
-                return true;
+                return false;
             }
         }
 
@@ -109,7 +106,8 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             commandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, args, page, paginatedCommand.itemsPerPage());
         } catch (Exception e) {
             sender.sendMessage("An error occurred while executing the paginated command.");
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            return false;
         }
         return true;
     }
@@ -128,7 +126,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             subCommandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, Arrays.copyOfRange(args, 1, args.length));
         } catch (Exception e) {
             sender.sendMessage("An error occurred while executing the subcommand.");
-            e.printStackTrace();
+            logger.error(e.getMessage());
         }
         return true;
     }
@@ -141,21 +139,22 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
                 page = Integer.parseInt(args[1]);
             } catch (NumberFormatException e) {
                 sender.sendMessage("Invalid page number. Usage: /" + label + " " + subCommandData.getName() + " [page]");
-                return true;
+                return false;
             }
         }
-
         try {
             subCommandData.getMethod().invoke(commandInstances.get(label.toLowerCase()), sender, command, label, Arrays.copyOfRange(args, 2, args.length), page, paginatedSubCommand.itemsPerPage());
         } catch (Exception e) {
             sender.sendMessage("An error occurred while executing the paginated subcommand.");
-            e.printStackTrace();
+            logger.error(e.getMessage());
+            return false;
         }
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command, String alias, String[] args) {
         CommandData commandData = commandMap.get(alias.toLowerCase());
         if (commandData == null) {
             return Collections.emptyList();
@@ -179,21 +178,24 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         try {
             return (List<String>) subCommandData.getMethod().invoke(commandInstances.get(alias.toLowerCase()), sender, command, alias, Arrays.copyOfRange(args, 1, args.length));
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
             return Collections.emptyList();
         }
+    }
+
+    public void registerCommand(String commandName, JavaPlugin plugin) {
+        Objects.requireNonNull(plugin.getCommand(commandName)).setExecutor(this);
+        Objects.requireNonNull(plugin.getCommand(commandName)).setTabCompleter(this);
     }
 
     private static class CommandData {
         private final Object commandInfo;
         private final Method method;
-        private final Object instance;
         private final Map<String, SubCommandData> subCommands = new HashMap<>();
 
         public CommandData(Object commandInfo, Method method, Object instance) {
             this.commandInfo = commandInfo;
             this.method = method;
-            this.instance = instance;
             for (Method subMethod : instance.getClass().getDeclaredMethods()) {
                 if (subMethod.isAnnotationPresent(SubCommandInfo.class)) {
                     SubCommandInfo subCommandInfo = subMethod.getAnnotation(SubCommandInfo.class);

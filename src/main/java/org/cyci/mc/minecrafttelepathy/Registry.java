@@ -50,15 +50,17 @@ public final class Registry extends JavaPlugin {
         // Register event listeners
         getServer().getPluginManager().registerEvents(new TelepathyListener(), this);
 
-        // Register commands from within the api
+        // Set up managers
         this.mysqlManager = new MySQLManager("host", 3306, "database", "username", "password");
         mysqlManager.connectAsync().join(); // Synchronously wait for the database connection
-        this.friendManager = new FriendManager(mysqlManager);
+        this.friendManager = new FriendManager(mysqlManager, logger);
         this.partyManager = new PartyManager(mysqlManager);
 
+        // Register commands from within the api
         commandHandler = new CommandHandler(
                 new FriendsCommand(friendManager),
-                new PartyCommand(partyManager)
+                new PartyCommand(partyManager),
+                new MainCommand()
         );
 
         commandHandler.registerCommand("friend", this);

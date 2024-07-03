@@ -168,4 +168,17 @@ public class PartyManager {
         // Remove party from database
         removePartyFromDatabase(partyId);
     }
+
+    // work on this
+    public void addToParty(UUID partyId, UUID uniqueId) {
+        Party party = partyMap.get(partyId);
+        if (party == null || !party.getLeader().equals(uniqueId)) {
+            // Party does not exist, invitee is not the leader
+            return;
+        }
+        if (!party.isMember(uniqueId)) {
+            // Member is not in the party
+            return;
+        }
+    }
 }
