@@ -6,6 +6,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerStatisticIncrementEvent;
 import org.cyci.mc.minecrafttelepathy.Registry;
+import org.cyci.mc.minecrafttelepathy.enums.GameMode;
 import org.cyci.mc.minecrafttelepathy.lang.Lang;
 import org.cyci.mc.minecrafttelepathy.managers.MySQLManager;
 import org.cyci.mc.minecrafttelepathy.managers.RoundManager;
@@ -54,12 +55,14 @@ public class PlayerListener implements Listener {
     public void onPlayerStatisticIncrement(PlayerStatisticIncrementEvent event) {
         String playerUUID = event.getPlayer().getUniqueId().toString();
 
-        switch (event.getStatistic()) {
-            case PLAY_ONE_MINUTE:
-                playerTimeTracker.recordPlaytime(playerUUID, 1);
-                break;
-            default:
-                break;
+        if (roundManager.getCurrentMode().equals(GameMode.IN_GAME)) {
+            switch (event.getStatistic()) {
+                case PLAY_ONE_MINUTE:
+                    playerTimeTracker.recordPlaytime(playerUUID, 1);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }

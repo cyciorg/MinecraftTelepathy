@@ -43,7 +43,7 @@ public final class Registry extends JavaPlugin {
         ThemeManager.initialize(this);
 
         // Initialize RoundManager with totalRounds and maxTeams
-        roundManager = new RoundManager(this, 10, 4); // Example values for totalRounds and maxTeams
+        roundManager = new RoundManager(this, 10, 4);
         teams = roundManager.getTeams(); // Get the list of teams from RoundManager
         messagesFile = new ConfigWrapper(this, "messages.yml");
 

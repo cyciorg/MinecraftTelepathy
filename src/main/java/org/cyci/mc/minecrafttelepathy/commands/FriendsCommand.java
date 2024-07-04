@@ -8,9 +8,12 @@ import org.bukkit.entity.Player;
 import org.cyci.mc.minecrafttelepathy.api.CommandInfo;
 import org.cyci.mc.minecrafttelepathy.api.PaginatedSubcommand;
 import org.cyci.mc.minecrafttelepathy.api.SubCommandInfo;
+import org.cyci.mc.minecrafttelepathy.lang.Lang;
 import org.cyci.mc.minecrafttelepathy.managers.FriendManager;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -78,33 +81,38 @@ public class FriendsCommand {
     public void listFriends(Player player, Command command, String label, String[] args, int page, int itemsPerPage) {
         friendManager.getFriends(player.getUniqueId()).thenAccept(friends -> {
             if (friends.isEmpty()) {
-                player.sendMessage("You have no friends.");
+                player.sendMessage(Lang.getFormattedMessage(Lang.NO_FRIENDS, player, null));
                 return;
             }
 
             int totalPages = (int) Math.ceil((double) friends.size() / itemsPerPage);
             if (page < 1 || page > totalPages) {
-                player.sendMessage("Invalid page number. Valid range: 1-" + totalPages);
+                Map<String, String> placeholders = new HashMap<>();
+                placeholders.put("totalPages", String.valueOf(totalPages));
+                player.sendMessage(Lang.getFormattedMessage(Lang.INVALID_PAGE_NUMBER, player, placeholders));
                 return;
             }
 
             int startIndex = (page - 1) * itemsPerPage;
             int endIndex = Math.min(startIndex + itemsPerPage, friends.size());
 
-            player.sendMessage(ChatColor.YELLOW + "Your friends (Page " + page + "/" + totalPages + "):");
+            Map<String, String> headerPlaceholders = new HashMap<>();
+            headerPlaceholders.put("page", String.valueOf(page));
+            headerPlaceholders.put("totalPages", String.valueOf(totalPages));
+            player.sendMessage(Lang.getFormattedMessage(Lang.FRIENDS_LIST_HEADER, player, headerPlaceholders));
+
             for (int i = startIndex; i < endIndex; i++) {
                 UUID friendId = friends.get(i);
                 Player friend = player.getServer().getPlayer(friendId);
-                if (friend != null) {
-                    player.sendMessage(ChatColor.GREEN + "- " + friend.getName());
-                } else {
-                    OfflinePlayer offlineFriend = player.getServer().getOfflinePlayer(friendId);
-                    player.sendMessage(ChatColor.GRAY + "- " + offlineFriend.getName() + " (Offline)");
-                }
+                Map<String, String> itemPlaceholders = new HashMap<>();
+                itemPlaceholders.put("player", (friend != null ? friend.getName() : player.getServer().getOfflinePlayer(friendId).getName()));
+                player.sendMessage(Lang.getFormattedMessage(Lang.FRIEND_LIST_ITEM, player, itemPlaceholders));
             }
 
             if (page < totalPages) {
-                player.sendMessage(ChatColor.YELLOW + "Type '/friend list " + (page + 1) + "' to see the next page.");
+                Map<String, String> nextPagePlaceholders = new HashMap<>();
+                nextPagePlaceholders.put("nextPage", String.valueOf(page + 1));
+                player.sendMessage(Lang.getFormattedMessage(Lang.FRIENDS_LIST_NEXT_PAGE, player, nextPagePlaceholders));
             }
         });
     }
