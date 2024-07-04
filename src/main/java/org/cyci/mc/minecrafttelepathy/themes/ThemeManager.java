@@ -20,7 +20,7 @@ public class ThemeManager {
 
     private static void loadThemesFromConfig() {
         FileConfiguration config = configWrapper.getConfig();
-        for (String themeName : config.getConfigurationSection("themes").getKeys(false)) {
+        for (String themeName : Objects.requireNonNull(config.getConfigurationSection("themes")).getKeys(false)) {
             List<Material> materials = new ArrayList<>();
             for (String materialName : config.getStringList("themes." + themeName)) {
                 Material material = Material.getMaterial(materialName);

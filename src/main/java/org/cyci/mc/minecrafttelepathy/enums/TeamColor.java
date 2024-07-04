@@ -13,7 +13,10 @@ import java.util.Random;
  * @created - Sun - June/Sun/2024
  */
 public enum TeamColor {
-    RED(1, "#FF5555Red"), GREEN(2, "#55FF55Green"), BLUE(3, "#5555FFBlue"), YELLOW(4, "#FFFF55Yellow");
+    RED(1, "#FF5555Red"),
+    GREEN(2, "#55FF55Green"),
+    BLUE(3, "#5555FFBlue"),
+    YELLOW(4, "#FFFF55Yellow");
 
     private final Integer _id;
     private final String _coloredName;

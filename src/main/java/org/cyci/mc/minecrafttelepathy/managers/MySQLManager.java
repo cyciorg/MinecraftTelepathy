@@ -113,7 +113,6 @@ public class MySQLManager {
                              + "wins INT NOT NULL DEFAULT 0,"
                              + "times_played INT NOT NULL DEFAULT 0,"
                              + "blocks_placed INT NOT NULL DEFAULT 0,"
-                             + "blocks_broken INT NOT NULL DEFAULT 0,"
                              + "time_spent_in_game INT NOT NULL DEFAULT 0,"
                              + "level INT NOT NULL DEFAULT 0,"
                              + "last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"

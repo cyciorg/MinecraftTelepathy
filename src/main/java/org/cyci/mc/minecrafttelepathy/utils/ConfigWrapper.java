@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 public class ConfigWrapper {
     private final Plugin plugin;
     private final String fileName;
-    private File configFile;
+    private final File configFile;
     private FileConfiguration config;
 
     private long lastModified = 0;

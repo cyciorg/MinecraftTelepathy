@@ -62,6 +62,9 @@ public final class Registry extends JavaPlugin {
                 new PartyCommand(partyManager),
                 new MainCommand()
         );
+        commandHandler.registerCommand("telepathy", this);
+        commandHandler.registerCommand("friend", this);
+        commandHandler.registerCommand("party", this);
 
         // Load messages from config
         loadMessages();
